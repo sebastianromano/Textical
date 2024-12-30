@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iCal-Creator</title>
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <h1>iCal-Creator</h1>
+    <div style="text-align: center; margin-top: -30px; margin-bottom: 40px; color: var(--text-secondary);">
+        Convert text to calendar events instantly
+    </div>
+    
+    <div class="input-container">
+        <input type="text" 
+               id="natural-input" 
+               class="input-field" 
+               placeholder="Type your appointments in natural language...">
+        <div class="example-text">Example: At 9 today I'm meeting Peter and later at 12 I'll visit the Louvre and at two I'll meet mom</div>
+        <button onclick="parseInput()" class="parse-button">Create Appointments</button>
+    </div>
+
+    <div id="appointments-container"></div>
+    <div id="success-message" class="success-message">Calendar event created!</div>
+
+    <script src="scripts/parser.js"></script>
+    <script src="scripts/ical.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>

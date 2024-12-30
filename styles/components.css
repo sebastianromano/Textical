@@ -1,0 +1,130 @@
+/* Input Container Styles */
+.input-container {
+    margin-bottom: 40px;
+    background-color: var(--bg-secondary);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+}
+
+.input-field {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.parse-button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-top: 15px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.parse-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.parse-button:active {
+    transform: translateY(0);
+}
+
+/* Appointment Card Styles */
+.appointment-card {
+    background-color: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+}
+
+.appointment-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px 0 0 4px;
+}
+
+.appointment-time {
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.appointment-description {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.download-hint {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.appointment-card:hover .download-hint {
+    opacity: 0.7;
+}
+
+.appointment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* Success Message Styles */
+.success-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    padding: 16px 25px;
+    border-radius: 12px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+/* Example Text Styles */
+.example-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 10px;
+    font-style: italic;
+    padding-left: 20px;
+    border-left: 2px solid var(--accent-primary);
+}
