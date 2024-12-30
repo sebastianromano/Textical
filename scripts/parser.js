@@ -3,64 +3,74 @@ function parseTime(timeStr, today) {
     let hours = 0;
     let minutes = 0;
 
-    // Handle more time formats
-    const timePatterns = {
-        wordNumbers: {
-            'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
-            'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
-            'eleven': 11, 'twelve': 12, 'noon': 12, 'midnight': 0
-        },
-        periods: {
-            'morning': 9,
-            'afternoon': 14,
-            'evening': 18,
-            'night': 20
-        },
-        relativeTime: {
-            'in an hour': 1,
-            'in two hours': 2,
-            'in three hours': 3
-        }
+    // Handle special time expressions
+    const timeExpressions = {
+        'quarter past': 15,
+        'quarter to': -15,
+        'half past': 30
     };
 
+    // Check for special time expressions first
+    for (const [expr, mins] of Object.entries(timeExpressions)) {
+        if (timeStr.includes(expr)) {
+            minutes = mins;
+            timeStr = timeStr.replace(expr, '').trim();
+            break;
+        }
+    }
+
     // Handle word numbers
-    for (const [word, num] of Object.entries(timePatterns.wordNumbers)) {
+    const wordToNum = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'eleven': 11, 'twelve': 12
+    };
+
+    for (const [word, num] of Object.entries(wordToNum)) {
         if (timeStr.includes(word)) {
             timeStr = timeStr.replace(word, num.toString());
         }
     }
 
-    // Handle different time formats
-    if (timeStr.includes(':')) {
-        // Handle HH:MM format
-        const [h, m] = timeStr.split(':');
-        hours = parseInt(h);
-        minutes = parseInt(m);
-    } else if (timeStr.includes('hour')) {
-        // Handle relative time (in X hours)
-        const now = new Date();
-        for (const [phrase, offset] of Object.entries(timePatterns.relativeTime)) {
-            if (timeStr.includes(phrase)) {
-                return new Date(now.getTime() + offset * 60 * 60 * 1000);
-            }
+    // Handle time periods
+    const timePeriods = {
+        'morning': [5, 11],    // 5AM to 11AM
+        'afternoon': [12, 17], // 12PM to 5PM
+        'evening': [17, 22],   // 5PM to 10PM
+        'night': [18, 23]      // 6PM to 11PM
+    };
+
+    for (const [period, [start, end]] of Object.entries(timePeriods)) {
+        if (timeStr.includes(period)) {
+            hours = start;
+            break;
         }
-    } else if (Object.keys(timePatterns.periods).some(period => timeStr.includes(period))) {
-        // Handle time periods (morning, afternoon, etc.)
-        for (const [period, defaultHour] of Object.entries(timePatterns.periods)) {
-            if (timeStr.includes(period)) {
-                hours = defaultHour;
-                break;
-            }
-        }
-    } else {
-        // Handle basic hour format
-        hours = parseInt(timeStr);
     }
 
-    // Adjust for AM/PM
-    if (timeStr.includes('pm') || (!timeStr.includes('am') && hours > 0 && hours < 7)) {
-        hours = hours % 12 + 12;
-    } else if (timeStr.includes('am') && hours === 12) {
+    // If no period was found, parse the time normally
+    if (hours === 0) {
+        if (timeStr.includes(':')) {
+            const [h, m] = timeStr.split(':');
+            hours = parseInt(h);
+            minutes = parseInt(m);
+        } else {
+            const numMatch = timeStr.match(/\d+/);
+            if (numMatch) {
+                hours = parseInt(numMatch[0]);
+            }
+        }
+    }
+
+    // Smart AM/PM inference
+    const isPM = timeStr.includes('pm') ||
+        timeStr.includes('evening') ||
+        timeStr.includes('night') ||
+        timeStr.includes('dinner') ||
+        (!timeStr.includes('am') && (hours < 7 || hours === 12));
+
+    if (isPM && hours < 12) {
+        hours += 12;
+    } else if (!isPM && hours === 12) {
         hours = 0;
     }
 
@@ -75,51 +85,35 @@ function parseAppointments(inputText) {
     const today = new Date();
     const appointments = [];
 
-    // Split by common conjunctions and punctuation
-    const segments = inputText.toLowerCase()
-        .replace(/[,;]/g, ' and ')
-        .split(/\s+(?:and|then|after that|afterwards|later)\s+/);
+    // Split by conjunctions while preserving original text
+    const segments = inputText.split(/\s*(?:,|\sand\s|,\s+then\s+|then\s+|afterwards\s+|after\s+that\s+)\s*/i)
+        .filter(segment => segment.trim());
 
-    // More comprehensive time pattern
-    const timePattern = /\b(?:at\s+)?(\d+(?::\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|noon|midnight|morning|afternoon|evening|night|in an hour|in two hours|in three hours)(?:\s*(?:am|pm))?\b/i;
+    // Enhanced time pattern including special expressions
+    const timePattern = /\b(?:at\s+)?(\d+(?::\d+)?|quarter\s+(?:past|to)|half\s+past\s+\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(?:am|pm))?\s*(?:in\s+the\s+(?:morning|afternoon|evening|night))?\b/i;
 
     segments.forEach(segment => {
         const timeMatch = segment.match(timePattern);
 
         if (timeMatch) {
-            const timeStr = timeMatch[1];
+            const timeStr = segment.slice(timeMatch.index);
             const time = parseTime(timeStr, today);
-            const fullSegment = segment;
 
-            // Remove time-related parts from the segment
-            let cleanSegment = fullSegment.replace(timeMatch[0], '');
-            // Remove common time prepositions when they're at the start
-            cleanSegment = cleanSegment.replace(/^(?:at|in|on|by)\s+/, '');
-            // Remove common connecting words at the start
-            cleanSegment = cleanSegment.replace(/^(?:then|and|,)\s+/, '');
-
-            // Clean up common phrases while keeping the rest of the text intact
-            let description = cleanSegment
+            // Get description by removing time-related parts
+            let description = segment
+                .replace(timeMatch[0], '')
+                .replace(/^(?:at|in|on|by|then|and|,)\s+/i, '')  // Remove leading prepositions
+                .replace(/\s*(?:in\s+the\s+(?:morning|afternoon|evening|night))\s*/i, '')  // Remove period references
                 .replace(/(?:i(?:'m|'ll|\s+will|\s+have\s+to)*|going|to|have|got|need\s+to)\s+/g, '')
-                .replace(/\s+/g, ' ')
                 .trim();
 
-            // If the description ended up before the time expression, get it from there
-            if (!description) {
-                description = fullSegment
-                    .slice(0, fullSegment.indexOf(timeMatch[0]))
-                    .replace(/(?:i(?:'m|'ll|\s+will|\s+have\s+to)*|going|to|have|got|need\s+to)\s+/g, '')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-            }
-
-            // Only capitalize if the description is all lowercase
-            if (description === description.toLowerCase()) {
+            // Only capitalize first letter if not already containing capitals
+            if (description && !/[A-Z]/.test(description)) {
                 description = description.charAt(0).toUpperCase() + description.slice(1);
             }
 
             // Estimate duration based on keywords
-            let duration = 60; // default duration in minutes
+            let duration = 60;
             const durationKeywords = {
                 'lunch': 60,
                 'meeting': 60,
@@ -127,7 +121,7 @@ function parseAppointments(inputText) {
                 'call': 30,
                 'coffee': 30,
                 'dinner': 90,
-                'movie': 120,
+                'movie': 150,
                 'concert': 180,
                 'visit': 120
             };
@@ -140,7 +134,6 @@ function parseAppointments(inputText) {
             }
 
             if (description) {
-                description = description.charAt(0).toUpperCase() + description.slice(1);
                 appointments.push({
                     title: description,
                     time: time,
