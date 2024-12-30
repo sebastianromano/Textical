@@ -89,21 +89,33 @@ function parseAppointments(inputText) {
         if (timeMatch) {
             const timeStr = timeMatch[1];
             const time = parseTime(timeStr, today);
+            const fullSegment = segment;
 
-            // Extract description with improved cleaning
-            let description = segment
-                .slice(segment.indexOf(timeMatch[0]) + timeMatch[0].length)
+            // Remove time-related parts from the segment
+            let cleanSegment = fullSegment.replace(timeMatch[0], '');
+            // Remove common time prepositions when they're at the start
+            cleanSegment = cleanSegment.replace(/^(?:at|in|on|by)\s+/, '');
+            // Remove common connecting words at the start
+            cleanSegment = cleanSegment.replace(/^(?:then|and|,)\s+/, '');
+
+            // Clean up common phrases while keeping the rest of the text intact
+            let description = cleanSegment
                 .replace(/(?:i(?:'m|'ll|\s+will|\s+have\s+to)*|going|to|have|got|need\s+to)\s+/g, '')
                 .replace(/\s+/g, ' ')
                 .trim();
 
-            // Handle special cases where description might be before the time
+            // If the description ended up before the time expression, get it from there
             if (!description) {
-                description = segment
-                    .slice(0, segment.indexOf(timeMatch[0]))
+                description = fullSegment
+                    .slice(0, fullSegment.indexOf(timeMatch[0]))
                     .replace(/(?:i(?:'m|'ll|\s+will|\s+have\s+to)*|going|to|have|got|need\s+to)\s+/g, '')
                     .replace(/\s+/g, ' ')
                     .trim();
+            }
+
+            // Only capitalize if the description is all lowercase
+            if (description === description.toLowerCase()) {
+                description = description.charAt(0).toUpperCase() + description.slice(1);
             }
 
             // Estimate duration based on keywords
